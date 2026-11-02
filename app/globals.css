@@ -48,7 +48,7 @@ h2 { font-size: 1.15rem; margin: 24px 0 12px; }
   border-bottom: 1px solid var(--border);
 }
 .topbar .brand { font-weight: 700; text-decoration: none; }
-.topbar nav { display: flex; gap: 4px; flex: 1; }
+.topbar nav { display: flex; gap: 4px; flex: 1; overflow-x: auto; white-space: nowrap; }
 .topbar nav a {
   text-decoration: none; padding: 6px 10px; border-radius: 8px; color: var(--muted);
 }
@@ -143,4 +143,36 @@ tr.overdue td { background: var(--warn-bg); }
   .topbar { flex-wrap: wrap; gap: 8px; }
   .topbar nav { order: 3; width: 100%; }
   .hide-mobile { display: none; }
+}
+
+.seg { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg label {
+  flex: 1; margin: 0; padding: 10px; text-align: center; cursor: pointer;
+  font-size: 0.95rem; font-weight: 600; color: var(--muted); background: var(--surface);
+}
+.seg label + label { border-left: 1px solid var(--border); }
+.seg label.on { background: var(--accent); color: var(--accent-text); }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.badge.inv { background: #e8eefc; color: #2b4fa8; }
+@media (prefers-color-scheme: dark) { .badge.inv { background: #1d2a4a; color: #9db6f2; } }
+
+/* Utskrift */
+.print-only { display: none; }
+.sheet { background: #fff; color: #111; max-width: 800px; margin: 0 auto; padding: 32px; border-radius: 8px; }
+.sheet h1 { font-size: 1.4rem; }
+.sheet table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+.sheet th, .sheet td { border: 1px solid #bbb; padding: 8px; text-align: left; vertical-align: top; font-size: 0.9rem; }
+.sheet th { background: #f1f1ee; width: 32%; }
+.sheet .sign { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 48px; }
+.sheet .sign div { border-top: 1px solid #111; padding-top: 6px; font-size: 0.85rem; }
+@media print {
+  .topbar, .no-print { display: none !important; }
+  .print-only { display: block; }
+  body { background: #fff; color: #111; }
+  main { max-width: none; padding: 0; }
+  .sheet { padding: 0; }
+  .card { border-color: #bbb; }
+  tr.overdue td { background: none; }
+  .table th, .table td { border-bottom: 1px solid #bbb; color: #111; }
+  a { text-decoration: none; }
 }

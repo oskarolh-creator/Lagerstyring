@@ -80,12 +80,12 @@ export default function ItemForm({
       <div className="grid2">
         <div className="field">
           <label htmlFor="category">Kategori</label>
-          <input id="category" name="category" list="cats" defaultValue={item?.category ?? ""} placeholder="Velg eller skriv ny" />
-          <datalist id="cats">
+          <select id="category" name="category" defaultValue={item?.category ?? ""} required>
+            <option value="" disabled>Velg kategori</option>
             {categories.map((c) => (
-              <option key={c} value={c} />
+              <option key={c} value={c}>{c}</option>
             ))}
-          </datalist>
+          </select>
         </div>
         <div className="field">
           <label htmlFor="total_qty">Antall totalt</label>

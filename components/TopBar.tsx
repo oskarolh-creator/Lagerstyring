@@ -10,6 +10,7 @@ export default function TopBar({ profile }: { profile: Profile }) {
         <Link href="/">Varer</Link>
         <Link href="/utlan">Utlån</Link>
         {profile.role === "admin" && <Link href="/varer/ny">+ Ny vare</Link>}
+        {profile.role === "admin" && <Link href="/kategorier">Kategorier</Link>}
         {profile.role === "admin" && <Link href="/brukere">Brukere</Link>}
       </nav>
       <span className="user">

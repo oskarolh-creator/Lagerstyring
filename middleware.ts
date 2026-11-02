@@ -38,7 +38,8 @@ async function refreshSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && !request.nextUrl.pathname.startsWith("/login")) {
+  const open = ["/login", "/velkommen"].some((p) => request.nextUrl.pathname.startsWith(p));
+  if (!user && !open) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

@@ -33,8 +33,20 @@ Teknologi: Next.js på Vercel, Supabase for database, innlogging og bilder. Begg
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = anon public key fra Supabase
 4. Trykk **Deploy**. Etter et minutt får du en adresse, f.eks. `lagerstyring.vercel.app`.
 
-### 3. Legge til ansatte
-Legg dem inn i Supabase under **Authentication → Users → Add user**. De får rollen *ansatt*. Under **Brukere** i appen kan du endre navn og gjøre noen til admin.
+### 3. Oppdatering 2 (kategorier, faktura, invitasjon)
+1. Supabase → **SQL Editor**: kjør innholdet i [`supabase/migrations_002_kategorier_faktura.sql`](supabase/migrations_002_kategorier_faktura.sql).
+2. Supabase → **Authentication → URL Configuration**:
+   - **Site URL**: `https://lagerstyring-supabase.vercel.app`
+   - **Redirect URLs** → Add URL: `https://lagerstyring-supabase.vercel.app/**`
+3. Supabase → **Project Settings → API Keys**: kopier **secret key** (`sb_secret_…`, eller `service_role` under Legacy).
+   Vercel → **Settings → Environment Variables** → legg til som **Secret**:
+   - `SUPABASE_SERVICE_ROLE_KEY` = nøkkelen over
+   Deretter **Redeploy**. Denne nøkkelen gir full tilgang, så den skal aldri deles eller ha `NEXT_PUBLIC_` foran.
+
+### 4. Legge til ansatte
+Gå til **Brukere** i appen, skriv inn e-post, navn og rolle, og trykk **Send invitasjon**. Personen får en e-post og lager sitt eget passord.
+
+Supabase sin innebygde e-post har en grense på noen få e-poster i timen. Skal dere invitere mange på en gang, kan dere enten legge dem inn direkte i Supabase (**Authentication → Users → Add user**) eller koble til egen e-posttjeneste under **Authentication → Emails → SMTP Settings**.
 
 ## Kjøre lokalt
 ```bash

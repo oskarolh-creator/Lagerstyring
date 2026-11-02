@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createLoan } from "@/app/actions";
 import Messages from "@/components/Messages";
+import LoanTypeFields from "@/components/LoanTypeFields";
 import ReturnForm from "@/components/ReturnForm";
 import { date, imageUrl, isOverdue, location, today } from "@/lib/format";
 import { requireUser } from "@/lib/supabase-server";
@@ -75,6 +76,7 @@ export default async function ItemPage({
             ) : (
               <form action={createLoan}>
                 <input type="hidden" name="item_id" value={item.id} />
+                <LoanTypeFields />
                 <div className="field">
                   <label htmlFor="quantity">Antall (maks {item.available_qty})</label>
                   <input id="quantity" name="quantity" type="number" min={1} max={item.available_qty} required />
@@ -150,18 +152,24 @@ function LoanCard({ l, back }: { l: Loan; back: string }) {
           · {l.borrower_name}
           {l.borrower_company && ` (${l.borrower_company})`}
         </strong>
-        {late ? (
-          <span className="badge warn">Forsinket</span>
-        ) : outstanding === 0 ? (
-          <span className="badge ok">Returnert</span>
-        ) : null}
+        <span className="row" style={{ gap: 6 }}>
+          {l.loan_type === "faktura" && <span className="badge inv">Faktureres</span>}
+          {late ? (
+            <span className="badge warn">Forsinket</span>
+          ) : outstanding === 0 ? (
+            <span className="badge ok">Returnert</span>
+          ) : null}
+        </span>
       </div>
       <div className="muted small">
         {date(l.start_date)} – {date(l.due_date)} · Utlånt av {l.profiles?.full_name ?? "ukjent"}
         {l.borrower_phone && ` · Tlf ${l.borrower_phone}`}
       </div>
       {l.description && <div style={{ whiteSpace: "pre-wrap" }}>{l.description}</div>}
-      {outstanding > 0 && <ReturnForm loanId={l.id} outstanding={outstanding} back={back} />}
+      <div className="row">
+        {outstanding > 0 && <ReturnForm loanId={l.id} outstanding={outstanding} back={back} />}
+        <Link href={`/utlan/${l.id}/skjema`} className="btn">Utlånsskjema</Link>
+      </div>
     </div>
   );
 }

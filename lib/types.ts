@@ -30,20 +30,10 @@ export type Loan = {
   description: string;
   returned_at: string | null;
   created_at: string;
+  loan_type: "lan" | "faktura";
+  invoice_to: string;
+  invoice_email: string;
+  invoiced_at: string | null;
   items?: { name: string; image_path: string | null } | null;
   profiles?: { full_name: string } | null;
 };
-
-export const CATEGORIES = [
-  "Stoler",
-  "Bord",
-  "Sofaer og lounge",
-  "Barer",
-  "Planter og trær",
-  "Bannere og skilt",
-  "Gjerder og avsperring",
-  "Telt",
-  "Lys og teknikk",
-  "Dekor",
-  "Annet",
-];

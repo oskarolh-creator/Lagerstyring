@@ -2,7 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { requireUser, supabaseServer } from "@/lib/supabase-server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+async function siteUrl() {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  return `${proto}://${host}`;
+}
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const int = (f: FormData, k: string) => Number.parseInt(str(f, k), 10);
@@ -99,8 +108,12 @@ export async function createLoan(form: FormData) {
   if (!start || !due) redirect(withError(back, "Velg fra- og til-dato."));
   if (due < start) redirect(withError(back, "Til-dato kan ikke være før fra-dato."));
 
-  const { error } = await supabase.from("loans").insert({
+  const loanType = str(form, "loan_type") === "faktura" ? "faktura" : "lan";
+  const { data: created, error } = await supabase.from("loans").insert({
     item_id: itemId,
+    loan_type: loanType,
+    invoice_to: loanType === "faktura" ? str(form, "invoice_to") : "",
+    invoice_email: loanType === "faktura" ? str(form, "invoice_email") : "",
     quantity,
     lent_by: user.id,
     borrower_name: borrower,
@@ -109,10 +122,10 @@ export async function createLoan(form: FormData) {
     start_date: start,
     due_date: due,
     description: str(form, "description"),
-  });
-  if (error) redirect(withError(back, error.message));
+  }).select("id").single();
+  if (error || !created) redirect(withError(back, error?.message ?? "Kunne ikke registrere utlånet."));
   revalidatePath("/", "layout");
-  redirect(`${back}?ok=utlan`);
+  redirect(`/utlan/${created.id}/skjema?ok=utlan`);
 }
 
 export async function returnLoan(form: FormData) {
@@ -152,4 +165,101 @@ export async function updateProfile(form: FormData) {
   if (error) redirect(withError("/brukere", error.message));
   revalidatePath("/brukere");
   redirect("/brukere?ok=1");
+}
+
+export async function setInvoiced(form: FormData) {
+  const { supabase } = await requireUser({ admin: true });
+  const id = str(form, "loan_id");
+  const back = str(form, "back") || "/utlan?vis=faktura";
+  const done = str(form, "done") === "1";
+  const { error } = await supabase
+    .from("loans")
+    .update({ invoiced_at: done ? new Date().toISOString() : null })
+    .eq("id", id);
+  if (error) redirect(withError(back, error.message));
+  revalidatePath("/utlan");
+  redirect(back);
+}
+
+// ---------- Glemt passord ----------
+export async function requestPasswordReset(form: FormData) {
+  const supabase = await supabaseServer();
+  const email = str(form, "email");
+  if (email) {
+    await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${await siteUrl()}/velkommen` });
+  }
+  redirect("/login?sendt=1");
+}
+
+// ---------- Invitasjon (kun admin) ----------
+export async function inviteUser(form: FormData) {
+  await requireUser({ admin: true });
+  const email = str(form, "email").toLowerCase();
+  const fullName = str(form, "full_name");
+  const role = str(form, "role") === "admin" ? "admin" : "ansatt";
+  if (!email.includes("@")) redirect(withError("/brukere", "Skriv inn en gyldig e-postadresse."));
+
+  const admin = supabaseAdmin();
+  if (!admin)
+    redirect(
+      withError(
+        "/brukere",
+        "Invitasjon er ikke satt opp ennå: SUPABASE_SERVICE_ROLE_KEY mangler i Vercel. Se README."
+      )
+    );
+
+  const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
+    data: { full_name: fullName },
+    redirectTo: `${await siteUrl()}/velkommen`,
+  });
+  if (error) {
+    const msg = /already been registered|already registered|exists/i.test(error.message)
+      ? "Denne e-posten har allerede en bruker."
+      : /rate limit/i.test(error.message)
+        ? "Supabase har nådd grensen for antall e-poster i timen. Prøv igjen senere."
+        : error.message;
+    redirect(withError("/brukere", msg));
+  }
+  if (data.user) {
+    await admin
+      .from("profiles")
+      .update({ role, ...(fullName ? { full_name: fullName } : {}) })
+      .eq("id", data.user.id);
+  }
+  revalidatePath("/brukere");
+  redirect(`/brukere?ok=invitert&epost=${encodeURIComponent(email)}`);
+}
+
+// ---------- Kategorier (kun admin) ----------
+export async function saveCategory(form: FormData) {
+  const { supabase } = await requireUser({ admin: true });
+  const oldName = str(form, "old_name");
+  const name = str(form, "name");
+  const sort = int(form, "sort_order");
+  if (!name) redirect(withError("/kategorier", "Kategorien må ha et navn."));
+  const row = { name, sort_order: Number.isFinite(sort) ? sort : 100 };
+  const { error } = oldName
+    ? await supabase.from("categories").update(row).eq("name", oldName)
+    : await supabase.from("categories").insert(row);
+  if (error)
+    redirect(
+      withError("/kategorier", error.code === "23505" ? `Kategorien «${name}» finnes allerede.` : error.message)
+    );
+  revalidatePath("/", "layout");
+  redirect("/kategorier?ok=1");
+}
+
+export async function deleteCategory(form: FormData) {
+  const { supabase } = await requireUser({ admin: true });
+  const name = str(form, "name");
+  const { count } = await supabase
+    .from("items")
+    .select("id", { count: "exact", head: true })
+    .eq("category", name);
+  if (count)
+    redirect(withError("/kategorier", `«${name}» brukes av ${count} varer. Flytt dem til en annen kategori først.`));
+  const { error } = await supabase.from("categories").delete().eq("name", name);
+  if (error) redirect(withError("/kategorier", error.message));
+  revalidatePath("/", "layout");
+  redirect("/kategorier?ok=1");
 }
