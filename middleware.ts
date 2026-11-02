@@ -1,11 +1,28 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { envMissing, SUPABASE_KEY, SUPABASE_URL } from "@/lib/env";
 
 export async function middleware(request: NextRequest) {
+  const missing = envMissing();
+  if (missing.length) {
+    return new NextResponse(
+      `Lagerstyring mangler oppsett. Legg inn disse under Vercel -> Settings -> Environment Variables og deploy på nytt: ${missing.join(", ")}`,
+      { status: 500, headers: { "content-type": "text/plain; charset=utf-8" } }
+    );
+  }
+  try {
+    return await refreshSession(request);
+  } catch (err) {
+    console.error("Middleware-feil", err);
+    return NextResponse.next({ request });
+  }
+}
+
+async function refreshSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    SUPABASE_URL,
+    SUPABASE_KEY,
     {
       cookies: {
         getAll: () => request.cookies.getAll(),

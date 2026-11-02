@@ -1,3 +1,5 @@
+import { SUPABASE_URL } from "./env";
+
 export function location(i: { zone: string; rack: string; shelf: string }) {
   const parts = [
     i.zone && `Sone ${i.zone}`,
@@ -9,7 +11,7 @@ export function location(i: { zone: string; rack: string; shelf: string }) {
 
 export function imageUrl(path: string | null) {
   if (!path) return null;
-  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/item-images/${path}`;
+  return `${SUPABASE_URL}/storage/v1/object/public/item-images/${path}`;
 }
 
 export function date(d: string) {
