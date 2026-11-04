@@ -263,3 +263,41 @@ export async function deleteCategory(form: FormData) {
   revalidatePath("/", "layout");
   redirect("/kategorier?ok=1");
 }
+
+// ---------- Slette / deaktivere brukere (kun admin) ----------
+export async function removeUser(form: FormData) {
+  const { supabase, user } = await requireUser({ admin: true });
+  const id = str(form, "id");
+  if (id === user.id) redirect(withError("/brukere", "Du kan ikke slette deg selv."));
+  const admin = supabaseAdmin();
+  if (!admin) redirect(withError("/brukere", "SUPABASE_SERVICE_ROLE_KEY mangler i Vercel. Se README."));
+
+  const { count } = await supabase
+    .from("loans")
+    .select("id", { count: "exact", head: true })
+    .eq("lent_by", id);
+
+  if (count) {
+    // Brukeren står som utlåner på tidligere utlån. For å beholde historikken
+    // stenges kontoen i stedet for å slettes.
+    const { error } = await admin.auth.admin.updateUserById(id, { ban_duration: "876000h" });
+    if (error) redirect(withError("/brukere", error.message));
+    revalidatePath("/brukere");
+    redirect("/brukere?ok=deaktivert");
+  }
+
+  const { error } = await admin.auth.admin.deleteUser(id);
+  if (error) redirect(withError("/brukere", error.message));
+  revalidatePath("/brukere");
+  redirect("/brukere?ok=slettet");
+}
+
+export async function reactivateUser(form: FormData) {
+  await requireUser({ admin: true });
+  const admin = supabaseAdmin();
+  if (!admin) redirect(withError("/brukere", "SUPABASE_SERVICE_ROLE_KEY mangler i Vercel. Se README."));
+  const { error } = await admin.auth.admin.updateUserById(str(form, "id"), { ban_duration: "none" });
+  if (error) redirect(withError("/brukere", error.message));
+  revalidatePath("/brukere");
+  redirect("/brukere?ok=1");
+}

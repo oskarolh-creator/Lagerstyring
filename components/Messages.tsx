@@ -2,6 +2,8 @@ const OK: Record<string, string> = {
   utlan: "Utlånet er registrert.",
   retur: "Returen er registrert.",
   "1": "Lagret.",
+  slettet: "Brukeren er slettet.",
+  deaktivert: "Brukeren har registrert utlån, så kontoen er stengt i stedet for slettet. Navnet blir stående i historikken.",
   invitert: "Invitasjonen er sendt. Brukeren får en e-post med lenke for å lage passord.",
 };
 
