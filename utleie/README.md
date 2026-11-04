@@ -4,7 +4,7 @@ Utleiesiden fra `index - nettside isak.html`, gjort om til en ekte nettside:
 alle data (utstyr, ordre, kunder, ansatte, innstillinger) ligger i Supabase,
 innlogging går gjennom Supabase Auth, og siden publiseres på Vercel.
 
-Denne mappen er et eget prosjekt og påvirker ikke lagerstyringen i resten av repoet.
+Dette er et eget prosjekt med eget repo, eget Supabase-prosjekt og eget Vercel-prosjekt.
 
 ## Hva som ligger her
 
@@ -22,8 +22,8 @@ Denne mappen er et eget prosjekt og påvirker ikke lagerstyringen i resten av re
 
 1. **Supabase:** Lag et nytt prosjekt på supabase.com. Åpne **SQL Editor**, lim inn hele
    `supabase/schema.sql` og trykk **Run**.
-2. **Vercel:** **Add New → Project**, velg repoet `lagerstyring`, sett **Root Directory** til
-   `utleie` og **Framework Preset** til **Other**. Trykk **Deploy**.
+2. **Vercel:** **Add New → Project**, velg repoet `nettside-isak-` og sett **Framework Preset**
+   til **Other**. Trykk **Deploy**.
 3. **Koble sammen:** I Vercel-prosjektet, gå til **Settings → Environment Variables** og legg inn
    - `SUPABASE_URL` (Supabase → Project Settings → API → Project URL)
    - `SUPABASE_ANON_KEY` (anon / publishable key)
@@ -62,7 +62,6 @@ Reglene håndheves i databasen (`schema.sql`), ikke bare i siden.
 ## Teste lokalt
 
 ```bash
-cd utleie
 npm install
 npx vercel dev   # trenger miljøvariablene over i .env.local
 ```
